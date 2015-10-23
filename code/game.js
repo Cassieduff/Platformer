@@ -4,7 +4,9 @@ var actorChars = {
   "E": Enemy,
   "=": Lava, "|": Lava, "v": Lava,
   'n': Picture,
-  's': Shooter,
+  'p': Picture2,
+  'z': Picture3,
+  's': Shooter, 'q': Shooter,
   'b': Bubble, 'd': Bubble 
   
 };
@@ -111,11 +113,33 @@ this.size= new Vector(20,15);
 }
 Picture.prototype.type = 'picture';
 
-function Shooter(pos){
+function Picture2(pos){
+this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
+this.wobble = Math.random() * Math.PI *2;
+this.size = new Vector(20,15);
+
+}
+Picture2.prototype.type = 'picture2';
+
+function Picture3(pos){
+this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
+this.wobble = Math.random() * Math.PI *2;
+this.size = new Vector(25,15);
+}
+Picture3.prototype.type = 'picture3';
+
+function Shooter(pos,ch){
 this.pos=pos;
 this.size= new Vector(0.5,0.5);
+if(ch=='s'){
 this.speed = new Vector(2,0);
 this.repeatPos = pos;
+}
+else if(ch=='q'){
+	this.speed = new Vector(-1,0);
+	this.repeatPos=pos;
+	
+}
 
 }
 Shooter.prototype.type= 'shooter';
@@ -127,9 +151,10 @@ this.size= new Vector(0.7,.5);
 if(ch == 'b'){
 	this.speed=new Vector(0,-3);
 	this.repeatPos=pos;
+	
 }
 else if(ch=='d'){
-	this.speed= new Vector(0,3);
+	this.speed= new Vector(1,3);
 	this.repeatPos=pos;
 }
 }
@@ -297,16 +322,7 @@ var newPos = this.pos.plus(this.speed.times(step));
   else
     this.speed = this.speed.times(-1);
 };
-/* this.move += step * moveSpeed;
-var movePos = this.move * moveDist;
-var newPos = this.basePos.plus(new Vector(movePos,0));
-if(!level.obstacleAt(newPos, this.size))
-	this.pos = newPos;
-else
-	moveSpeed = moveSpeed*(-1);
 
-
-}; */
 
 Lava.prototype.act = function(step, level) {
   var newPos = this.pos.plus(this.speed.times(step));
@@ -334,6 +350,20 @@ Picture.prototype.act = function(step){
 	this.wobble += step * wobbleSpeed;
   var wobblePos = Math.sin(this.wobble) * wobbleDist;
   this.pos = this.basePos.plus(new Vector(0, wobblePos));
+};
+
+Picture2.prototype.act = function(step){
+	this.wobble += step * wobbleSpeed;
+    var wobblePos = Math.sin(this.wobble) * wobbleDist;
+    this.pos = this.basePos.plus(new Vector(0, wobblePos));
+
+};
+
+Picture3.prototype.act = function(step){
+	this.wobble += step * wobbleSpeed;
+    var wobblePos = Math.sin(this.wobble) * wobbleDist;
+    this.pos = this.basePos.plus(new Vector(0, wobblePos));
+
 };
 
 Bubble.prototype.act=function(step, level){
@@ -404,35 +434,42 @@ Player.prototype.act = function(step, level, keys) {
     this.size.y -= step;
   }
 };
-
+var lostCount = 0;
 //new logic goes down here everytime you make a new actor
 Level.prototype.playerTouched = function(type, actor) {
- if (type == "lava" && this.status == null) {
+	
+  if (type == "lava" && this.status == null) {
     this.status = "lost";
     this.finishDelay = 1;
+	lostCount++;
   }
   else if(type =='bad' && this.status==null){
     this.status = "lost";
     this.finishDelay = 1;
+	lostCount++;
   }
 else if(type == 'enemy' && this.status== null){
 	this.status = "lost";
     this.finishDelay = 1;
+	lostCount++;
 }
 else if(type == 'fire' && this.status== null){
 	this.status = "lost";
 	this.finishDelay = 1;
+	lostCount++;
 }
 else if(type == 'shooter' && this.status==null) {
 	this.status ="lost";
 	this.finishDelay = 1;
+	lostCount++;
 }
 else if(type == 'bubble' && this.status== null){
 	this.status = "lost";
 	this.finishDelay = 1;
-}
+	lostCount++;
+} 
 
-  else if (type == "coin") {
+  if (type == "coin") {
     this.actors = this.actors.filter(function(other) {
       return other != actor;
 	  
@@ -445,7 +482,6 @@ else if(type == 'bubble' && this.status== null){
     }
 	
   }
-  
   
 };
 var arrowCodes = {37: "left", 38: "up", 39: "right"};
@@ -504,12 +540,27 @@ function runLevel(level, Display, andThen){
 function runGame(plans, Display){
 	function startLevel(n){
 		runLevel(new Level(plans[n]), Display, function(status) {
-      if (status == "lost")
-        startLevel(n);
-      else if (n < plans.length - 1)
+      if (status == "lost"){
+         if(lostCount>4){
+			 startLevel(5);
+			 lostCount=0;
+				
+			 }
+	  else
+		startLevel(n);
+		}
+	  else if(n==5){
+		startLevel(1);
+		}
+		else if(n==4){
+		startLevel(1);
+		}
+      else if (n < plans.length - 2){
         startLevel(n + 1);
+		}
       else
-        console.log("You win!");
+        startLevel(4);
+		
     });
 	}
 	startLevel(0);
